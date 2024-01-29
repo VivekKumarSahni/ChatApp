@@ -17,10 +17,20 @@ export default function Chat() {
   const divUnderMessages = useRef();
 
   useEffect(() => {
+    connectToWs();
+  }, []);
+  function connectToWs(){
     const ws = new WebSocket("ws://localhost:4040");
     setWs(ws);
     ws.addEventListener("message", handleMessage);
-  }, []);
+    ws.addEventListener("close", ()=>{
+      setTimeout(() => {
+        console.log('Disconnected. Trying to reconnect.');
+        connectToWs();
+      }, 1000);
+    });
+
+  }
   function showOnlinePeople(peopleArray) {
     //this will store unique value of userdata in people object
     const people = {};
@@ -64,7 +74,16 @@ export default function Chat() {
     const div = divUnderMessages.current;
     if(div)
     div.scrollIntoView({behaviour:'smooth',block:'end'}); 
-  },[messages])
+  },[messages]);
+  useEffect(()=>{
+    if(selectedUserId){
+      axios.get('/messages/'+selectedUserId).then(res=>{
+        setMessages(res.data);
+      })
+    }
+  },[selectedUserId])
+
+
   const onlinePeopleExclOurUser = { ...onlinePeople };
   delete onlinePeopleExclOurUser[id];
 
@@ -108,8 +127,8 @@ export default function Chat() {
             {messagesWithoutDupes.map(message => (
                   <div key={message._id} className={(message.sender === id ? 'text-right': 'text-left')}>
                     <div className={"text-left inline-block p-2 my-2 rounded-md text-sm " +(message.sender === id ? 'bg-blue-500 text-white':'bg-white text-gray-500')}>
-                      sender:{message.sender}<br/>
-                      my id: {id}<br/>
+                      {/* sender:{message.sender}<br/>
+                      my id: {id}<br/> */}
                       {message.text}
                      
                     </div>
