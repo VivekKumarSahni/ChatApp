@@ -28,7 +28,7 @@ export default function Chat() {
         console.log('Disconnected. Trying to reconnect.');
         connectToWs();
       }, 1000);
-    });
+    });//its called adding a ping
 
   }
   function showOnlinePeople(peopleArray) {
@@ -70,6 +70,19 @@ export default function Chat() {
     }]));
          
   }
+  useEffect(() => {
+    axios.get('/people').then(res => {
+      const offlinePeopleArr = res.data
+        .filter(p => p._id !== id)
+        .filter(p => !Object.keys(onlinePeople).includes(p._id));
+      const offlinePeople = {};
+      offlinePeopleArr.forEach(p => {
+        offlinePeople[p._id] = p;
+      });
+      setOfflinePeople(offlinePeople);
+    });
+  }, [onlinePeople]);
+
   useEffect(()=>{
     const div = divUnderMessages.current;
     if(div)
@@ -109,6 +122,15 @@ export default function Chat() {
                 selected={userId === selectedUserId}
               />
             ))}
+            {Object.keys(offlinePeople).map(userId => (
+            <Contact
+              key={userId}
+              id={userId}
+              online={false}
+              username={offlinePeople[userId].username}
+              onClick={() => setSelectedUserId(userId)}
+              selected={userId === selectedUserId} />
+          ))}
           </div>
           <div className="p-2 text-center flex items-center justify-center"></div>
         </div>
